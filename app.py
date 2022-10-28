@@ -1,5 +1,5 @@
 from unittest import result
-from apihelper import check_endpoint_info
+from apihelper import check_endpoint_info, fill_optional_data
 import dbhelper
 from flask import Flask, request, make_response
 import json
@@ -12,16 +12,21 @@ app = Flask(__name__)
 
 @app.patch('/api/client')
 def client_patch():
-    invalid = check_endpoint_info(request.json, [request.headers['token'],'email','password','bio','image_url'])
+    invalid = check_endpoint_info(request.headers, ['token'])
     if(invalid != None):
         return make_response(json.dumps(invalid, default=str), 400)
 
-    results = dbhelper.run_statment('CALL(?,?,?,?,?)', [request.json.get(''), request.json.get(''), request.json.get(''), 
-    request.json.get(''), request.json.get(''),])
+    results = dbhelper.run_statment('CALL get_info(?)', [request.headers.get('token')])
+    if(type(results) != list and len(results) != 1):
+        return make_response(json.dumps(results), 400)
+
+    results = fill_optional_data(request.json, results[0] ['email','password','image_url','bio'])
+    results = dbhelper.run_statment('CALL patch_client(?,?,?,?,?)',
+    [request.headers['token'], results['email'], results['password'], results['bio'], results['image_url'] ])
     if(type(results) == list):
-        return make_response(json.dumps(results, default=str), 200)
+        return make_response(json.dumps('success'), 200)
     else:
-        return make_response(json.dumps(results, default=str), 500)
+        return make_response(json.dumps(results), 500)
 
 
 

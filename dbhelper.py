@@ -55,5 +55,20 @@ def run_statment(statment, list_of_args=[]):
     if(cursor == None):
         return "conntection error"
     results = execute_statment(cursor, statment, list_of_args)
+    results = make_dictionary(results, cursor)
     close_connect(cursor)
     return results
+
+
+
+def make_dictionary(results, cursor):
+# get the columns from the statment the cursor executed
+    columns = [i[0] for i in cursor.description]
+# start an empyty array for the up coming dictionaru rows
+    new_results = []
+#loop through each row in the original results
+    for row in results:
+#append a newly zipped together column name with row value
+        new_results.append(dict(zip(columns, row)))
+# returns the new_results
+    return new_results
